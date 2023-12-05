@@ -1,0 +1,91 @@
+version: "3.5"
+name: bookstack
+services:
+  bookstack-server:
+    image: lscr.io/linuxserver/bookstack
+    container_name: cont-bookstack1
+    hostname: cont-bookstack1
+    environment:
+      - APP_URL=https://wiki.local
+      - DB_HOST=cont-bookstack1-DB
+      - DB_PORT=3306
+      - FILE__DB_USERNAME=/run/secrets/MYSQL_USER
+      - FILE__DB_PASSWORD=/run/secrets/MYSQL_PASSWORD
+      - DB_DATABASE=bookstackapp
+      - AUTH_METHOD=ldap
+      - LDAP_SERVER=ldap.local:389
+      - LDAP_BASE_DN="DC=local"
+      - FILE__LDAP_DN=/run/secrets/LDAP_USER
+      - FILE__LDAP_PASS=/run/secrets/LDAP_PASSWORD
+      - LDAP_USER_FILTER="(&(sAMAccountName=$${user})(memberOf:1.2.840.113556.1.4.1941:=CN=App_bookstack,OU=groups,DC=local))"
+      - LDAP_VERSION=3
+      - LDAP_ID_ATTRIBUTE=sAMAccountName
+      - LDAP_EMAIL_ATTRIBUTE=mail
+      - LDAP_DISPLAY_NAME_ATTRIBUTE=cn
+      - LDAP_THUMBNAIL_ATTRIBUTE=null
+      - LDAP_START_TLS=false
+      - LDAP_USER_TO_GROUPS=true
+      - LDAP_GROUP_ATTRIBUTE="memberOf"
+      - LDAP_REMOVE_FROM_GROUPS=true
+      - APP_DEBUG=true
+    secrets:
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - LDAP_PASSWORD
+      - LDAP_USER
+    volumes:
+      - data_app:/config:rw
+    networks:
+      LAN:
+        #replace ip address
+        ipv4_address: XXX.XXX.XXX.XXX
+        aliases:
+         - cont-bookstack1
+    #replace ip address
+    dns: XXX.XXX.XXX.XXX
+    ports:
+      - 8080:80
+    restart: unless-stopped
+    depends_on:
+      - bookstack-db
+  bookstack-db:
+    image: mysql:5.7.21
+    container_name: cont-bookstack1-DB
+    hostname: cont-bookstack1-DB
+    volumes:
+      - 'data_db:/var/lib/mysql:rw'
+    env_file:
+      - ./env_vars/.env_db_mysql
+    secrets:
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - MYSQL_ROOT_PASSWORD
+    networks:
+      LAN:
+        #replace ip address
+        ipv4_address: XXX.XXX.XXX.XXX
+        aliases:
+         - s-cont-it-bookstack1-DB
+    #replace ip address
+    dns: XXX.XXX.XXX.XXX
+    restart: unless-stopped
+volumes:
+  data_app:
+  data_db:
+networks:
+  LAN:
+    external: true
+
+secrets:
+  MYSQL_USER:
+    file: ./env_vars/.MYSQL_USER
+  MYSQL_PASSWORD:
+    file: ./env_vars/.MYSQL_PASSWORD
+  MYSQL_ROOT_USER:
+    file: ./env_vars/.MYSQL_ROOT_USER
+  MYSQL_ROOT_PASSWORD:
+    file: ./env_vars/.MYSQL_ROOT_PASSWORD
+  LDAP_PASSWORD:
+    file: ./env_vars/.LDAP_PASSWORD
+  LDAP_USER:
+    file: ./env_vars/.LDAP_USER
