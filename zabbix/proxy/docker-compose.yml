@@ -1,0 +1,23 @@
+version: '3.5'
+name: "zabbix-proxy"
+services:
+  zabbix-proxy1:
+    image: zabbix/zabbix-proxy-sqlite3:alpine-6.4-latest
+    hostname: cont-zabbix-proxy1 
+    container_name: cont-zabbix-proxy1
+    ports:
+      - "10061:10051"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.70'
+          memory: 512M
+        reservations:
+          cpus: '0.3'
+          memory: 256M
+    env_file:
+      - ./env_vars/.env_prx
+    networks:
+      zabbix-proxy:
+networks:
+  zabbix-proxy:

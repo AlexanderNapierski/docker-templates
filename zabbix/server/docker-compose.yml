@@ -1,0 +1,143 @@
+version: '3.5'
+
+name: "zabbix"
+
+services:
+ server:
+  hostname: cont-zabbix1 
+  image: zabbix/zabbix-server-mysql:alpine-6.4-latest
+  container_name: cont-zabbix1
+  volumes:
+   - 'data:/usr/lib/zabbix/alertscripts:ro'
+   - 'data:/usr/lib/zabbix/externalscripts:ro'
+   - 'data:/var/lib/zabbix/dbscripts:ro'
+   - 'data:/var/lib/zabbix/export:rw'
+   - 'data:/var/lib/zabbix/modules:ro'
+   - 'data:/var/lib/zabbix/enc:ro'
+   - 'data:/var/lib/zabbix/ssh_keys:ro'
+   - 'data:/var/lib/zabbix/mibs:ro'
+   - 'data:/var/lib/zabbix/snmptraps:rw'
+  ulimits:
+   nproc: 65535
+   nofile:
+    soft: 20000
+    hard: 40000
+  deploy:
+   resources:
+    limits:
+      cpus: '0.70'
+      memory: 4G
+    reservations:
+      cpus: '0.5'
+      memory: 512M
+  env_file:
+   - ./env_vars/.env_db_mysql
+   - ./env_vars/.env_srv
+  secrets:
+   - MYSQL_USER
+   - MYSQL_PASSWORD
+   - MYSQL_ROOT_USER
+   - MYSQL_ROOT_PASSWORD
+  depends_on:
+   - database
+  networks:
+   LAN:
+     #replace ip address
+     ipv4_address: XXX.XXX.XXX.XXX
+     aliases:
+      - s-cont-it-zabbix1
+  #replace ip address
+  dns: XXX.XXX.XXX.XXX
+  stop_grace_period: 30s
+  sysctls:
+   - net.ipv4.ip_local_port_range=1024 65000
+   - net.ipv4.conf.all.accept_redirects=0
+   - net.ipv4.conf.all.secure_redirects=0
+   - net.ipv4.conf.all.send_redirects=0
+  restart: always
+
+ database:
+  image: mysql:8.0-oracle
+  container_name: cont-zabbix1-DB
+  command:
+   - mysqld
+   - --character-set-server=utf8mb4
+   - --collation-server=utf8mb4_bin
+   - --skip-character-set-client-handshake
+   - --default-authentication-plugin=mysql_native_password
+  volumes:
+   - 'data:/var/lib/mysql:rw'
+  env_file:
+   - ./env_vars/.env_db_mysql
+  secrets:
+   - MYSQL_USER
+   - MYSQL_PASSWORD
+   - MYSQL_ROOT_PASSWORD
+  stop_grace_period: 1m
+  networks:
+   LAN:
+    #replace ip address
+    ipv4_address: XXX.XXX.XXX.XXX
+    aliases:
+     - cont-zabbix1-DB
+  restart: always
+
+ webinterface:
+  image: zabbix/zabbix-web-nginx-mysql:alpine-6.4-latest
+  container_name: s-cont-it-zabbix1-UI
+  # default ports 8080, 8443
+  volumes:
+   - /etc/localtime:/etc/localtime:ro
+   - /etc/timezone:/etc/timezone:ro
+   - 'data:/etc/ssl/nginx:ro'
+   - 'data:/usr/share/zabbix/modules/:ro'
+  deploy:
+   resources:
+    limits:
+      cpus: '0.70'
+      memory: 512M
+    reservations:
+      cpus: '0.5'
+      memory: 256M
+  env_file:
+   - ./env_vars/.env_db_mysql
+   - ./env_vars/.env_web
+  secrets:
+   - MYSQL_USER
+   - MYSQL_PASSWORD
+  depends_on:
+   - database
+   - server
+  healthcheck:
+   test: ["CMD", "curl", "-f", "http://localhost:8080/ping"]
+   interval: 10s
+   timeout: 5s
+   retries: 3
+   start_period: 30s
+  networks:
+   LAN:
+    #replace ip address
+    ipv4_address: XXX.XXX.XXX.XXX
+    aliases:
+     - cont-zabbix1-UI
+  stop_grace_period: 10s
+  sysctls:
+   - net.core.somaxconn=65535
+  restart: always
+
+networks:
+  LAN:
+    external: true
+
+volumes:
+  data:
+
+secrets:
+  MYSQL_USER:
+    file: ./env_vars/.MYSQL_USER
+  MYSQL_PASSWORD:
+    file: ./env_vars/.MYSQL_PASSWORD
+  MYSQL_ROOT_USER:
+    file: ./env_vars/.MYSQL_ROOT_USER
+  MYSQL_ROOT_PASSWORD:
+    file: ./env_vars/.MYSQL_ROOT_PASSWORD
