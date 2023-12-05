@@ -1,0 +1,24 @@
+version: '3.7'
+
+name: "cont-iobroker1"
+
+services:
+  I-HUH-ioBroker1:
+    restart: always
+    image: buanet/iobroker:latest
+    container_name: cont-ioBroker1
+    environment:
+      - IOB_ADMINPORT=6481
+    volumes:
+      - data:/opt/iobroker
+    networks:
+      IoT-LAN:
+        #replace ip address
+        ipv4_address: XXX.XXX.XXX.XXX
+
+volumes:
+  data:
+
+networks:
+  IoT-LAN:
+    external: true
