@@ -1,0 +1,33 @@
+version: '3.9'
+
+name: portainer
+
+services:
+  portainer:
+    image: portainer/portainer-ee:latest
+    container_name: cont-portainer1
+    hostnamne: cont-portainer1
+    ports:
+      - "9443:9443"
+      - "8000:8000"
+      - "9000:9000"
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - data:/data
+    networks:
+      LAN:
+        #replace ip address
+        ipv4_address: XXX.XXX.XXX.XXX
+        aliases:
+         - cont-portainer1
+    #replace ip address
+    dns: XXX.XXX.XXX.XXX
+
+
+volumes:
+  data:
+
+networks:
+  LAN:
+    external: true
