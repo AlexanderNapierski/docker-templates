@@ -1,0 +1,60 @@
+version: '3'
+
+name: home-assistant
+
+services:
+  homeassistant:
+    image: homeassistant/home-assistant:latest
+    container_name: cont-home-assistant1
+    restart: always
+    ports:
+      - "8123:8123"
+    volumes:
+      - data:/config
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      LAN:
+        #replace ip address
+        ipv4_address: XXX.XXX.XXX.XXX
+        aliases:
+          - cont-home-assistant1
+    #replace ip address
+    dns: XXX.XXX.XXX.XXX
+
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: cont-mosquitto1
+    restart: always
+    volumes:
+      - ./env_var/mosquitto:/mosquitto
+      - mosquitto_data:/mosquitto/data
+      - ./env_var/mosquitto/log:/mosquitto/log
+    ports:
+      - 1883:1883
+      - 9001:9001
+
+  zigbee2mqtt:
+    container_name: cont-zigbee2mqtt1
+    image: koenkk/zigbee2mqtt
+    restart: always
+    volumes:
+      - zigbee2mqtt_data:/app/data
+      - ./env_var/zigbee2mqtt/configuration.yaml:/app/data/configuration.yaml
+      - /run/udev:/run/udev:ro
+    ports:
+      # Frontend port
+      - 8080:8080
+    environment:
+      - TZ=Europe/Berlin
+    devices:
+      # Make sure this matched your adapter location
+      - /dev/ttyUSB0:/dev/ttyACM0
+
+networks:
+  LAN:
+    external: true
+
+volumes:
+  data:
+  mosquitto_data:
+  zigbee2mqtt_data:

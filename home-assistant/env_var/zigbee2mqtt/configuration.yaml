@@ -1,0 +1,22 @@
+homeassistant: true
+mqtt:
+  base_topic: zigbee2mqtt
+  #replace with mosquitto server ip address
+  server: mqtt://XXX.XXX.XXX.XXX
+  user: hass
+  password: #choose secret password
+serial:
+  port: /dev/ttyACM0
+  adapter: auto
+frontend: true
+devices:
+advanced:
+  homeassistant_legacy_entity_attributes: false
+  legacy_api: false
+  legacy_availability_payload: false
+  log_level: debug
+device_options:
+  legacy: false
+ota:
+  ikea_ota_use_test_url: false
+  disable_automatic_update_check: true
